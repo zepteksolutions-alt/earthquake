@@ -37,7 +37,9 @@ CHANNELS = ["ENE", "ENN", "ENZ"]
 FETCH_WINDOW = int(os.getenv("FETCH_WINDOW", "90"))
 CACHE_INTERVAL = int(os.getenv("CACHE_INTERVAL", "5"))
 NUM_SAMPLES = int(os.getenv("NUM_SAMPLES", "500"))
-THRESHOLD_MG = float(os.getenv("THRESHOLD_MG", "10"))
+G_CONST = 9.80665
+PGA_THRESHOLD_MPS2 = float(os.getenv("PGA_THRESHOLD_MPS2", "0.02"))
+THRESHOLD_MG = float(os.getenv("THRESHOLD_MG", str((PGA_THRESHOLD_MPS2 / G_CONST) * 1000)))
 
 SAVE_EXCEEDANCES = os.getenv("SAVE_EXCEEDANCES", "true").lower() in {
     "1",
@@ -49,7 +51,6 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 SUPABASE_TABLE = os.getenv("SUPABASE_TABLE", "exceedance_events")
 
-G_CONST = 9.80665
 BANGKOK_TZ = timezone(timedelta(hours=7))
 
 
@@ -428,6 +429,7 @@ async def health():
         "active_fdsn_server": ACTIVE_FDSN_SERVER,
         "station": STATION,
         "network": NETWORK,
+        "pga_threshold_mps2": PGA_THRESHOLD_MPS2,
         "threshold_mg": THRESHOLD_MG,
         "supabase_configured": bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY),
     }
