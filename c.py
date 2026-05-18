@@ -38,8 +38,9 @@ FETCH_WINDOW = int(os.getenv("FETCH_WINDOW", "90"))
 CACHE_INTERVAL = int(os.getenv("CACHE_INTERVAL", "5"))
 NUM_SAMPLES = int(os.getenv("NUM_SAMPLES", "500"))
 G_CONST = 9.80665
+MG_TO_MPS2 = 0.00981
 PGA_THRESHOLD_MPS2 = float(os.getenv("PGA_THRESHOLD_MPS2", "0.02"))
-THRESHOLD_MG = float(os.getenv("THRESHOLD_MG", str((PGA_THRESHOLD_MPS2 / G_CONST) * 1000)))
+THRESHOLD_MG = float(os.getenv("THRESHOLD_MG", str(PGA_THRESHOLD_MPS2 / MG_TO_MPS2)))
 
 SAVE_EXCEEDANCES = os.getenv("SAVE_EXCEEDANCES", "true").lower() in {
     "1",
@@ -153,6 +154,7 @@ def detect_exceedance_ranges(
     acc_mg: Dict[str, List[float]],
     sample_start_time,
     sampling_rate: float,
+    pga_threshold_mps2: float,
     threshold_mg: float,
 ) -> List[ExceedanceRange]:
     if not sample_start_time or sampling_rate <= 0:
@@ -199,15 +201,16 @@ def detect_exceedance_ranges(
         active_peak_value = 0.0
 
     for index in range(sample_count):
-        value = vector_mg(index)
-        if value > threshold_mg:
+        value_mg = vector_mg(index)
+        value_mps2 = value_mg * MG_TO_MPS2
+        if value_mps2 > pga_threshold_mps2:
             if active_start is None:
                 active_start = index
                 active_peak = index
-                active_peak_value = value
-            elif value > active_peak_value:
+                active_peak_value = value_mg
+            elif value_mg > active_peak_value:
                 active_peak = index
-                active_peak_value = value
+                active_peak_value = value_mg
         elif active_start is not None:
             close_range(index - 1)
 
@@ -346,6 +349,7 @@ def fetch_earthquake_data_sync() -> Optional[EarthquakeData]:
                 acc_mg=acc_mg,
                 sample_start_time=ref_meta["start_time"],
                 sampling_rate=ref_meta["sampling_rate"],
+                pga_threshold_mps2=PGA_THRESHOLD_MPS2,
                 threshold_mg=THRESHOLD_MG,
             )
             save_exceedances_to_supabase(exceedance_ranges)
