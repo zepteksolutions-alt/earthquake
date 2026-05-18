@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from urllib import error, request
 
 import numpy as np
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -431,37 +431,6 @@ async def health():
         "threshold_mg": THRESHOLD_MG,
         "supabase_configured": bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY),
     }
-
-
-@app.post("/simulate-exceedance", response_model=ExceedanceRange, tags=["Testing"])
-async def simulate_exceedance(
-    peak_mg: float = Query(default=25.0, gt=0),
-    duration_seconds: float = Query(default=2.0, gt=0),
-):
-    now = thai_now()
-    start_time = now - timedelta(seconds=duration_seconds)
-    peak_time = start_time + timedelta(seconds=duration_seconds / 2)
-    end_time = now
-    sample_count = max(1, int(duration_seconds * 100))
-
-    simulated = ExceedanceRange(
-        station=f"{STATION}_SIM",
-        network=NETWORK,
-        threshold_mg=THRESHOLD_MG,
-        start_index=0,
-        end_index=sample_count - 1,
-        start_time=start_time.isoformat(),
-        end_time=end_time.isoformat(),
-        peak_index=sample_count // 2,
-        peak_time=peak_time.isoformat(),
-        peak_mg=peak_mg,
-        peak_x_mg=peak_mg,
-        peak_y_mg=0.0,
-        peak_z_mg=0.0,
-        duration_seconds=duration_seconds,
-    )
-    save_exceedances_to_supabase([simulated])
-    return simulated
 
 
 if __name__ == "__main__":
