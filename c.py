@@ -146,14 +146,11 @@ def detect_exceedance_ranges(
     if not sample_start_time or sampling_rate <= 0:
         return []
 
-    sample_count = min(len(acc["x"]), len(acc["y"]), len(acc["z"]))
+    sample_count = len(acc["x"])
     ranges: List[ExceedanceRange] = []
     active_start = None
     active_peak = None
     active_peak_value = 0.0
-
-    def peak_abs(index: int) -> float:
-        return max(abs(acc["x"][index]), abs(acc["y"][index]), abs(acc["z"][index]))
 
     def close_range(end_index: int):
         nonlocal active_start, active_peak, active_peak_value
@@ -183,7 +180,7 @@ def detect_exceedance_ranges(
         active_peak_value = 0.0
 
     for index in range(sample_count):
-        value = peak_abs(index)
+        value = abs(acc["x"][index])
         if value > threshold:
             if active_start is None:
                 active_start = index
