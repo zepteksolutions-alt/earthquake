@@ -278,6 +278,9 @@ def fetch_earthquake_data_sync() -> Optional[EarthquakeData]:
 
             recent_samples = trace.data[-min(NUM_SAMPLES, len(trace.data)) :]
             samples_list = [float(val) / API_VALUE_DIVISOR for val in recent_samples]
+            if trace.stats.channel == "ENZ" and samples_list:
+                z_mean = sum(samples_list) / len(samples_list)
+                samples_list = [val - z_mean for val in samples_list]
             sample_start_index = len(trace.data) - len(recent_samples)
             meta = {
                 "start_time": trace.stats.starttime
